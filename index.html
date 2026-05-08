@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stanley Portfolio - Human Review Dashboard</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --navy: #102f4e;
+      --navy-2: #173f66;
+      --gold: #b58a2b;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d8dee8;
+      --soft-line: #edf0f5;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --green: #17684b;
+      --green-bg: #eaf6ef;
+      --yellow: #8a5a00;
+      --yellow-bg: #fff5d9;
+      --red: #9d2f2f;
+      --red-bg: #ffeded;
+      --blue-bg: #eaf2fa;
+      --shadow: 0 10px 28px rgba(16, 47, 78, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      line-height: 1.45;
+    }
+
+    a { color: var(--navy); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: var(--navy);
+      color: #fff;
+      padding: 22px 18px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      border-bottom: 1px solid rgba(255,255,255,0.18);
+      padding-bottom: 18px;
+      margin-bottom: 18px;
+    }
+
+    .brand .team {
+      color: #d5ba73;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand h1 {
+      font-size: 21px;
+      line-height: 1.14;
+      margin: 8px 0 8px;
+      color: #fff;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: rgba(255,255,255,0.72);
+      font-size: 13px;
+    }
+
+    nav a {
+      display: block;
+      color: rgba(255,255,255,0.88);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    nav a:hover {
+      background: rgba(255,255,255,0.09);
+      text-decoration: none;
+    }
+
+    .nav-note {
+      margin-top: 18px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.76);
+      font-size: 12px;
+    }
+
+    main {
+      padding: 28px;
+      max-width: 1480px;
+      width: 100%;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin: 0 0 18px;
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--soft-line);
+    }
+
+    .section-head h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 900px;
+    }
+
+    .section-action {
+      color: var(--muted);
+      font-size: 12px;
+      min-width: 180px;
+      text-align: right;
+    }
+
+    .body { padding: 18px 22px 22px; }
+
+    .hero {
+      background: linear-gradient(135deg, #102f4e 0%, #173f66 70%, #214f77 100%);
+      color: #fff;
+      padding: 26px 28px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.18);
+      padding-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+      line-height: 1.12;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: rgba(255,255,255,0.76);
+      font-size: 14px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      border-left: 2px solid #d5ba73;
+      padding: 2px 0 2px 10px;
+      min-height: 52px;
+    }
+
+    .metric .label {
+      color: rgba(255,255,255,0.68);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 800;
+    }
+
+    .metric .value {
+      margin-top: 3px;
+      font-size: 21px;
+      font-weight: 820;
+      letter-spacing: 0;
+    }
+
+    .metric .sub {
+      color: rgba(255,255,255,0.68);
+      font-size: 11px;
+      margin-top: 1px;
+    }
+
+    .callouts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--gold);
+      background: #fff;
+      border-radius: 7px;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    .callout b { display: block; margin-bottom: 3px; color: var(--navy); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pill.red { background: var(--red-bg); color: var(--red); }
+    .pill.yellow { background: var(--yellow-bg); color: var(--yellow); }
+    .pill.green { background: var(--green-bg); color: var(--green); }
+    .pill.blue { background: var(--blue-bg); color: var(--navy); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .note-box {
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+
+    .note-box h3 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 14px;
+    }
+
+    .note-box ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .note-box li { margin: 4px 0; }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      background-image: linear-gradient(to right, rgba(16,47,78,0.08), rgba(16,47,78,0) 16px);
+      background-repeat: no-repeat;
+      background-position: right center;
+      background-size: 16px 100%;
+      background-attachment: local, scroll;
+    }
+
+    table {
+      width: 100%;
+      min-width: 880px;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    th {
+      background: #f2f5f8;
+      color: #42526b;
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--soft-line);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .strong-row td { background: #f5f1e6; font-weight: 800; }
+    .muted { color: var(--muted); }
+    .wide { min-width: 1160px; }
+    .sale-table { min-width: 1420px; }
+    .small-table { min-width: 680px; }
+
+    .map-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .map-panel {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .map-title {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--soft-line);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .map {
+      height: 420px;
+      width: 100%;
+      background: #e8edf2;
+    }
+
+    .map-foot {
+      padding: 9px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--soft-line);
+    }
+
+    .next-step {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .next-step h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 17px;
+    }
+
+    .next-step p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      background: var(--navy);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      white-space: nowrap;
+      border: 1px solid var(--navy);
+    }
+
+    .btn:hover {
+      background: var(--navy-2);
+      text-decoration: none;
+    }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      padding: 20px 0 8px;
+    }
+
+    @media (max-width: 1120px) {
+      .shell { grid-template-columns: 1fr; }
+      aside { position: relative; height: auto; padding: 14px 16px; }
+      .brand { padding-bottom: 10px; margin-bottom: 10px; }
+      .brand h1 { font-size: 18px; margin: 4px 0; }
+      .brand p { font-size: 12px; }
+      .nav-note { display: none; }
+      nav {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+      nav a { padding: 10px 10px; }
+      main { padding: 18px; }
+      .metric-strip { grid-template-columns: repeat(2, 1fr); }
+      .callouts, .grid-2, .map-grid { grid-template-columns: 1fr; }
+      .hero-top, .next-step, .section-head { flex-direction: column; }
+      .section-action { text-align: left; min-width: 0; }
+      .map { height: 280px; }
+    }
+
+    @media (max-width: 640px) {
+      nav { grid-template-columns: 1fr 1fr; gap: 6px; }
+      nav a { padding: 12px 10px; font-size: 13px; }
+      main { padding: 12px; }
+      .hero { padding: 18px; }
+      .hero h1 { font-size: 22px; }
+      .metric-strip { grid-template-columns: 1fr; }
+      .metric .value { font-size: 19px; }
+      .section-head, .body { padding-left: 12px; padding-right: 12px; }
+      .callout { padding: 10px; font-size: 12.5px; }
+      .next-step { padding: 14px; gap: 12px; }
+      .btn { width: 100%; min-height: 44px; }
+      .map { height: 240px; }
+      table { font-size: 11.5px; }
+      th, td { padding: 7px 8px; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <div class="team">LAAA Human Review</div>
+      <h1>Stanley Portfolio</h1>
+      <p>1341 Stanley + 1033 Stanley<br />Long Beach, CA 90804</p>
+    </div>
+    <nav aria-label="Review sections">
+      <a href="#overview">Overview</a>
+      <a href="#property-facts">Property Facts</a>
+      <a href="#pricing">Pricing Metrics</a>
+      <a href="#rent-roll">Rent Roll</a>
+      <a href="#operating-statement">Operating Statement</a>
+      <a href="#sale-comps">Sale Comps</a>
+      <a href="#rent-comps">Rent Comps</a>
+      <a href="#maps">Maps</a>
+      <a href="#notes">Notes</a>
+      <a href="#gates">Approval Gates</a>
+      <a href="#next">Next Step</a>
+    </nav>
+    <div class="nav-note">
+      This dashboard is for section-by-section review. Make official approval marks in the workbook.
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero" id="overview">
+      <div class="hero-top">
+        <div>
+          <h1>Working Analysis Review</h1>
+          <p>Internal approval surface. No client-facing draft has been created.</p>
+        </div>
+        <div class="status">Awaiting Glen Approval</div>
+      </div>
+      <div class="metric-strip" aria-label="Recommended pricing metrics">
+        <div class="metric"><div class="label">Recommended Price</div><div class="value">$2.10M</div><div class="sub">$1.05M each</div></div>
+        <div class="metric"><div class="label">Price / Unit</div><div class="value">$262.5K</div><div class="sub">8 units total</div></div>
+        <div class="metric"><div class="label">Price / SF</div><div class="value">$421</div><div class="sub">combined assessor SF</div></div>
+        <div class="metric"><div class="label">In-Place Cap</div><div class="value">4.83%</div><div class="sub">$101,510 NOI</div></div>
+        <div class="metric"><div class="label">In-Place GRM</div><div class="value">12.01</div><div class="sub">$174,900 GSR</div></div>
+        <div class="metric"><div class="label">PF Cap</div><div class="value">5.43%</div><div class="sub">conservative PF</div></div>
+        <div class="metric"><div class="label">PF GRM</div><div class="value">11.14</div><div class="sub">1033 unverified</div></div>
+      </div>
+    </div>
+
+    <div class="next-step" id="next">
+      <div>
+        <h2>Approval Workflow</h2>
+        <p>Use this dashboard to inspect the analysis. Use the workbook to mark Approve / Change / Need info / Confirm with seller / Internal only.</p>
+      </div>
+      <a class="btn" href="Stanley_Portfolio_Review.xlsx">Open Review Workbook</a>
+    </div>
+
+    <section id="property-facts">
+      <div class="section-head">
+        <div>
+          <h2>Property Facts</h2>
+          <p>Side-by-side property profile with year built, SF, unit mix, regulatory posture, and current open fact gaps.</p>
+        </div>
+        <div class="section-action">Review workbook tabs 01 and 07 for approval marks.</div>
+      </div>
+      <div class="body">
+        <div class="table-wrap">
+          <table class="wide">
+            <thead>
+              <tr><th>Field</th><th>1341 Stanley</th><th>1033 Stanley</th><th>Review Note</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Display address</td><td>1341-1345 Stanley Ave, Long Beach, CA 90804</td><td>1033-1039 Stanley Ave, Long Beach, CA 90804</td><td>Address formatting should be confirmed before client use.</td></tr>
+              <tr><td>APN</td><td>7260-023-009</td><td>7262-004-017</td><td>LightBox source.</td></tr>
+              <tr><td>Year built</td><td>1959</td><td>1923</td><td>Both are pre-1978 vintage wood-frame assets.</td></tr>
+              <tr><td>Construction</td><td>Wood frame</td><td>Wood frame</td><td>Relevant to insurance, reserves, seismic review.</td></tr>
+              <tr><td>Units</td><td>4</td><td>4</td><td>8 combined.</td></tr>
+              <tr><td>Unit mix</td><td>2x 2BR/1BA + 2x 1BR/1BA, verified from OM page 8</td><td>Working assumption: 2x 2BR + 2x 1BR, unverified</td><td><span class="pill red">1033 rent roll needed</span></td></tr>
+              <tr><td>Building SF</td><td>2,400 assessor; 2,456 rentable per OM unit SF total</td><td>2,588 assessor</td><td>Assessor SF used for price/SF metrics.</td></tr>
+              <tr><td>Lot SF</td><td>6,429</td><td>6,520</td><td>Similar lot scale.</td></tr>
+              <tr><td>Zoning</td><td>LBR2N</td><td>LBR2N</td><td>Same zoning.</td></tr>
+              <tr><td>Last sale</td><td>04-01-2024 / $1,050,000</td><td>04-01-2024 / $1,100,000</td><td>Owner short-hold is internal framing unless asked.</td></tr>
+              <tr><td>2025 assessed value</td><td>$1,071,000</td><td>$1,122,000</td><td>Recommendation is slightly below assessed value.</td></tr>
+              <tr><td>LightBox AVM</td><td>$1,097,000</td><td>$1,160,333</td><td>Recommendation is below AVM.</td></tr>
+              <tr><td>Rent control posture</td><td>AB 1482 + Long Beach Just Cause Ordinance</td><td>AB 1482 + Long Beach Just Cause Ordinance</td><td>Vacancy decontrol available on turnover.</td></tr>
+              <tr><td>Open physical-risk facts</td><td>Soft-story/SWOF unverified; deferred maintenance possible</td><td>Soft-story/SWOF unverified; rent roll missing</td><td><span class="pill red">Verify before client-facing use</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing">
+      <div class="section-head">
+        <div>
+          <h2>Pricing Metrics vs Sale Comps</h2>
+          <p>Required review metrics at the recommended price, placed directly next to the sale comp cohort.</p>
+        </div>
+        <div class="section-action">Key approval decision: $1.05M each / $2.10M combined.</div>
+      </div>
+      <div class="body">
+        <div class="table-wrap">
+          <table class="wide">
+            <thead>
+              <tr><th>Metric</th><th>1341</th><th>1033</th><th>Combined / Portfolio</th><th>Sale Comp Median</th><th>Sale Comp Range</th><th>Review Read</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Price</td><td class="num">$1,050,000</td><td class="num">$1,050,000</td><td class="num">$2,100,000</td><td class="num">$1,267,500</td><td>$920K - $1.449M</td><td>Each subject building is 17.2% below median fourplex sale price.</td></tr>
+              <tr><td>Price / Unit</td><td class="num">$262,500</td><td class="num">$262,500</td><td class="num">$262,500</td><td class="num">$316,875</td><td>$230K - $362K</td><td>Below median; useful value anchor.</td></tr>
+              <tr><td>Price / SF</td><td class="num">$438</td><td class="num">$406</td><td class="num">$421</td><td class="num">$407</td><td>$188 - $561</td><td>Combined is near median; SF spread is wide, so use as secondary support.</td></tr>
+              <tr><td>In-place Cap</td><td class="num">4.78%</td><td class="num">4.89%</td><td class="num">4.83%</td><td class="num">6.50% raw</td><td>4.64% - 7.41%</td><td>Subject is tighter. Raw comp NOIs are mostly expense-flagged; normalized cap model still needed.</td></tr>
+              <tr><td>In-place GRM</td><td class="num">12.11</td><td class="num">11.90</td><td class="num">12.01</td><td class="num">12.54 trimmed</td><td>11.16 - 14.03</td><td>Subject is 4.2% below trimmed comp median.</td></tr>
+              <tr><td>Pro forma Cap</td><td class="num">5.33%</td><td class="num">5.52%</td><td class="num">5.43%</td><td class="num">N/A</td><td>N/A</td><td>Subject conservative PF only; sale comps do not provide a clean PF cap cohort.</td></tr>
+              <tr><td>Pro forma GRM</td><td class="num">11.28</td><td class="num">11.01</td><td class="num">11.14</td><td class="num">N/A</td><td>N/A</td><td>Do not compare PF subject metrics to current comp GRMs without this caveat.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap" style="margin-top:14px;">
+          <table>
+            <thead>
+              <tr><th>List Each</th><th>Combined</th><th>$/Unit</th><th>$/SF</th><th>In-Place Cap</th><th>In-Place GRM</th><th>PF Cap</th><th>PF GRM</th><th>Posture</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="num">$1,000,000</td><td class="num">$2,000,000</td><td class="num">$250,000</td><td class="num">$401</td><td class="num">5.13%</td><td class="num">11.44</td><td class="num">5.76%</td><td class="num">10.61</td><td>Defensive - below comp median</td></tr>
+              <tr class="strong-row"><td class="num">$1,050,000</td><td class="num">$2,100,000</td><td class="num">$262,500</td><td class="num">$421</td><td class="num">4.83%</td><td class="num">12.01</td><td class="num">5.43%</td><td class="num">11.14</td><td>Recommended - market aligned</td></tr>
+              <tr><td class="num">$1,100,000</td><td class="num">$2,200,000</td><td class="num">$275,000</td><td class="num">$441</td><td class="num">4.56%</td><td class="num">12.58</td><td class="num">5.13%</td><td class="num">11.67</td><td>Aggressive</td></tr>
+              <tr><td class="num">$1,150,000</td><td class="num">$2,300,000</td><td class="num">$287,500</td><td class="num">$461</td><td class="num">4.31%</td><td class="num">13.15</td><td class="num">4.85%</td><td class="num">12.20</td><td>Aggressive</td></tr>
+              <tr><td class="num">$1,200,000</td><td class="num">$2,400,000</td><td class="num">$300,000</td><td class="num">$481</td><td class="num">4.08%</td><td class="num">13.72</td><td class="num">4.60%</td><td class="num">12.74</td><td>Aggressive - leans on PF</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="rent-roll">
+      <div class="section-head">
+        <div>
+          <h2>Rent Roll and Market Rent Review</h2>
+          <p>Unit-level rent roll where available, plus the specific gap that must be solved for 1033.</p>
+        </div>
+        <div class="section-action"><span class="pill red">1033 rent roll missing</span></div>
+      </div>
+      <div class="body">
+        <div class="grid-2">
+          <div>
+            <div class="table-wrap">
+              <table class="small-table">
+                <thead>
+                  <tr><th colspan="8">1341 Stanley - Verified Unit-Level Rent Roll</th></tr>
+                  <tr><th>Unit</th><th>Type</th><th>SF</th><th>In-Place</th><th>OM Market</th><th>Rentometer Median</th><th>PF Floor</th><th>Review Note</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>2BR/1BA</td><td class="num">728</td><td class="num">$1,900</td><td class="num">$2,300</td><td class="num">$2,185</td><td class="num">$2,185</td><td>Rentometer median above in-place.</td></tr>
+                  <tr><td>2</td><td>2BR/1BA</td><td class="num">728</td><td class="num">$1,935</td><td class="num">$2,300</td><td class="num">$2,185</td><td class="num">$2,185</td><td>Highest in-place 2BR.</td></tr>
+                  <tr><td>3</td><td>1BR/1BA</td><td class="num">500</td><td class="num">$1,695</td><td class="num">$1,800</td><td class="num">$1,595</td><td class="num">$1,695</td><td>In-place wins over median.</td></tr>
+                  <tr><td>4</td><td>1BR/1BA</td><td class="num">500</td><td class="num">$1,695</td><td class="num">$1,800</td><td class="num">$1,595</td><td class="num">$1,695</td><td>In-place wins over median.</td></tr>
+                  <tr class="strong-row"><td>Total</td><td>2x2BR + 2x1BR</td><td class="num">2,456</td><td class="num">$7,225</td><td class="num">$8,200</td><td class="num">$7,754 blended</td><td class="num">$7,754</td><td>OM market is the upside ceiling; conservative PF is Rentometer/in-place floor.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="table-wrap">
+              <table class="small-table">
+                <thead>
+                  <tr><th colspan="7">1033 Stanley - Aggregate Only</th></tr>
+                  <tr><th>Data Point</th><th>Value</th><th>Annual</th><th>Basis</th><th>Confidence</th><th>Risk</th><th>Review Action</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Current monthly rent</td><td class="num">$7,350</td><td class="num">$88,200</td><td>Dec 2025 collected rent</td><td>High</td><td>Unit-level rents unknown</td><td>Approve current GSR or correct</td></tr>
+                  <tr><td>Avg rent / unit</td><td class="num">$1,838</td><td class="num">$22,050</td><td>Aggregate only</td><td>Medium</td><td>Cannot test each unit against floor</td><td>Get rent roll</td></tr>
+                  <tr><td>Working unit mix</td><td>2x1BR + 2x2BR</td><td>N/A</td><td>Assumption from avg rent and neighboring mix</td><td>Low</td><td>PF rent could be wrong</td><td>Seller confirmation required</td></tr>
+                  <tr><td>Conservative PF monthly</td><td class="num">$7,950</td><td class="num">$95,400</td><td>2x1BR @ $1,725 + 2x2BR @ $2,250</td><td>Low/Medium</td><td>Subject to rent roll</td><td>Keep internal until verified</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="operating-statement">
+      <div class="section-head">
+        <div>
+          <h2>Operating Statement</h2>
+          <p>Broker-presented hybrid underwriting: seller actuals for recurring property operations, normalized where buyer-required or distorted.</p>
+        </div>
+        <div class="section-action">Baseline uses trash $0 because no T12 evidence exists.</div>
+      </div>
+      <div class="body">
+        <div class="table-wrap">
+          <table class="wide">
+            <thead>
+              <tr><th>Line Item</th><th>1341</th><th>1033</th><th>Combined</th><th>Basis</th><th>Review Risk</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Gross Scheduled Rent</td><td class="num">$86,700</td><td class="num">$88,200</td><td class="num">$174,900</td><td>Dec 2025 annualized</td><td>1033 lacks unit-level rent roll.</td></tr>
+              <tr><td>Vacancy and Credit Loss (3%)</td><td class="num">($2,601)</td><td class="num">($2,646)</td><td class="num">($5,247)</td><td>Glen 2026-05-08 override</td><td>Buyer may use 5%.</td></tr>
+              <tr><td>Effective Gross Income</td><td class="num">$84,099</td><td class="num">$85,554</td><td class="num">$169,653</td><td>GSR less vacancy</td><td>N/A</td></tr>
+              <tr><td>Property Tax</td><td class="num">$12,285</td><td class="num">$12,285</td><td class="num">$24,570</td><td>1.17% x $1.05M list</td><td>Moves with price.</td></tr>
+              <tr><td>Insurance</td><td class="num">$3,200</td><td class="num">$4,066</td><td class="num">$7,266</td><td>LAAA formula; higher than T12 actual</td><td>CA market could be higher.</td></tr>
+              <tr><td>Water/Sewer</td><td class="num">$2,896</td><td class="num">$1,669</td><td class="num">$4,565</td><td>T12 actual "Gas and Water"</td><td>Assumes gas is individually metered.</td></tr>
+              <tr><td>Trash</td><td class="num">$0</td><td class="num">$0</td><td class="num">$0</td><td>No T12 evidence</td><td>If owner-paid trash confirmed, subtract $2,800 NOI combined.</td></tr>
+              <tr><td>Common Area Electric</td><td class="num">$618</td><td class="num">$0</td><td class="num">$618</td><td>T12 actual</td><td>Minimal common area.</td></tr>
+              <tr><td>Repairs and Maintenance</td><td class="num">$2,800</td><td class="num">$3,000</td><td class="num">$5,800</td><td>Normalized benchmark</td><td>Gross T12 R&M is much higher; deferred maintenance needs review.</td></tr>
+              <tr><td>Contract Services</td><td class="num">$4,600</td><td class="num">$5,600</td><td class="num">$10,200</td><td>Normalized recurring run-rate from T12</td><td>Spike treatment is judgment-heavy.</td></tr>
+              <tr><td>Administrative</td><td class="num">$1,000</td><td class="num">$1,000</td><td class="num">$2,000</td><td>Buyer-normalized</td><td>Low risk.</td></tr>
+              <tr><td>Management Fee</td><td class="num">$4,335</td><td class="num">$4,410</td><td class="num">$8,745</td><td>5% x GSR</td><td>Matches seller paying 5%; LAAA broker-opt default was 4%.</td></tr>
+              <tr><td>Reserves</td><td class="num">$1,400</td><td class="num">$1,600</td><td class="num">$3,000</td><td>Vintage benchmark</td><td>CapEx history could justify adjustment.</td></tr>
+              <tr><td>LB Business License / Reg</td><td class="num">$578</td><td class="num">$301</td><td class="num">$879</td><td>T12 actual</td><td>Recurring local fee.</td></tr>
+              <tr><td>Other</td><td class="num">$250</td><td class="num">$250</td><td class="num">$500</td><td>Tier 1 broker-opt</td><td>Low risk.</td></tr>
+              <tr class="strong-row"><td>Total OpEx</td><td class="num">$33,962</td><td class="num">$34,181</td><td class="num">$68,143</td><td>Includes tax; trash $0 baseline</td><td>N/A</td></tr>
+              <tr class="strong-row"><td>NOI</td><td class="num">$50,137</td><td class="num">$51,373</td><td class="num">$101,510</td><td>EGI less OpEx</td><td>Cap @ $2.10M = 4.83%.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="sale-comps">
+      <div class="section-head">
+        <div>
+          <h2>Individual Sale Comps</h2>
+          <p>Every closed sale comp with year built, pricing metrics, reliability flags, and notes. These are extraction metrics, not a normalized comp model.</p>
+        </div>
+        <div class="section-action">8 closed Long Beach 90804 fourplexes.</div>
+      </div>
+      <div class="body">
+        <div class="table-wrap">
+          <table class="sale-table">
+            <thead>
+              <tr><th>#</th><th>Address</th><th>Distance</th><th>Yr Built</th><th>SF</th><th>Sale Price</th><th>$/Unit</th><th>$/SF</th><th>Cap</th><th>GRM</th><th>Sale Date</th><th>DOM</th><th>Reliability</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>1009 Coronado Ave #4</td><td class="num">0.72 mi</td><td class="num">1928</td><td class="num">4,884</td><td class="num">$920,000</td><td class="num">$230,000</td><td class="num">$188</td><td class="num">N/A</td><td class="num">N/A</td><td>02-03-2025</td><td class="num">0</td><td><span class="pill yellow">Insufficient financials</span></td><td>No usable income/expense data; price metrics only.</td></tr>
+              <tr><td>2</td><td>1056 Junipero Ave</td><td class="num">0.11 mi</td><td class="num">1924</td><td class="num">2,130</td><td class="num">$1,050,000</td><td class="num">$262,500</td><td class="num">$493</td><td class="num">7.41%</td><td class="num">12.78</td><td>04-02-2026</td><td class="num">54</td><td><span class="pill yellow">Pro-forma flagged</span></td><td>Expenses likely understated; GOI implied.</td></tr>
+              <tr><td>3</td><td>3915 E 11th St</td><td class="num">0.90 mi</td><td class="num">1949</td><td class="num">3,091</td><td class="num">$1,235,000</td><td class="num">$308,750</td><td class="num">$400</td><td class="num">4.64%</td><td class="num">14.03</td><td>10-10-2025</td><td class="num">32</td><td><span class="pill yellow">Vacancy / PF issue</span></td><td>One unit shown at $0 actual rent; projected rent upside.</td></tr>
+              <tr><td>4</td><td>3320 E 8th St</td><td class="num">0.61 mi</td><td class="num">1930</td><td class="num">2,940</td><td class="num">$1,200,000</td><td class="num">$300,000</td><td class="num">$408</td><td class="num">6.31%</td><td class="num">12.77</td><td>07-31-2025</td><td class="num">24</td><td><span class="pill yellow">Expense issue</span></td><td>Rent table conflicts with stated NOI.</td></tr>
+              <tr><td>5</td><td>1200 Temple Ave</td><td class="num">0.20 mi</td><td class="num">1913</td><td class="num">2,316</td><td class="num">$1,300,000</td><td class="num">$325,000</td><td class="num">$561</td><td class="num">6.54%</td><td class="num">12.31</td><td>04-14-2025</td><td class="num">20</td><td><span class="pill yellow">PF rents</span></td><td>Remarks state all units can be delivered vacant.</td></tr>
+              <tr><td>6</td><td>932 Coronado Ave</td><td class="num">0.56 mi</td><td class="num">1909</td><td class="num">2,714</td><td class="num">$1,300,000</td><td class="num">$325,000</td><td class="num">$479</td><td class="num">7.01%</td><td class="num">11.46</td><td>11-13-2025</td><td class="num">35</td><td><span class="pill yellow">PF / vacancy issue</span></td><td>Three units shown at $0 actual rent; GOI exceeds rent table projection.</td></tr>
+              <tr><td>7</td><td>2015 E 7th St</td><td class="num">0.50 mi</td><td class="num">1919</td><td class="num">3,510</td><td class="num">$1,425,000</td><td class="num">$356,250</td><td class="num">$406</td><td class="num">6.50%</td><td class="num">11.16</td><td>05-27-2025</td><td class="num">14</td><td><span class="pill yellow">Inconsistent fields</span></td><td>Actual AGR does not reconcile cleanly to stated NOI.</td></tr>
+              <tr><td>8</td><td>1033 Gladys Ave</td><td class="num">0.28 mi</td><td class="num">1923</td><td class="num">3,928</td><td class="num">$1,449,015</td><td class="num">$362,254</td><td class="num">$369</td><td class="num">5.13%</td><td class="num">16.81</td><td>03-13-2025</td><td class="num">15</td><td><span class="pill yellow">GRM outlier</span></td><td>Long-term tenants; four garages; excluded from trimmed GRM median.</td></tr>
+              <tr class="strong-row"><td>-</td><td>Median / cohort read</td><td>-</td><td>-</td><td>-</td><td class="num">$1,267,500</td><td class="num">$316,875</td><td class="num">$407</td><td class="num">6.50%</td><td class="num">12.54 trimmed</td><td>-</td><td>-</td><td>Useful, but flagged</td><td>Use GRM and price/unit as cleaner anchors; cap-rate model needs normalization.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="rent-comps">
+      <div class="section-head">
+        <div>
+          <h2>Rent Comp Evidence</h2>
+          <p>Saved Rentometer evidence from the deal folder. This is summary-level evidence, not a full individual rent-comp table.</p>
+        </div>
+        <div class="section-action"><span class="pill yellow">MLS leased cross-check still needed</span></div>
+      </div>
+      <div class="body">
+        <div class="table-wrap">
+          <table class="wide">
+            <thead>
+              <tr><th>Subject Address</th><th>Bedrooms</th><th>Mean</th><th>Median</th><th>p25</th><th>p75</th><th>Min</th><th>Max</th><th>Samples</th><th>Radius</th><th>QuickView</th><th>Review Note</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1341 Stanley Ave</td><td>1BR</td><td class="num">$1,462</td><td class="num">$1,595</td><td class="num">$1,144</td><td class="num">$1,779</td><td class="num">$500</td><td class="num">$2,375</td><td class="num">26</td><td>0.75 mi</td><td><a href="https://www.rentometer.com/analysis/1-bed/1341-stanley-ave-long-beach-ca-90804/X1oMZs1NSD8/quickview">Open</a></td><td>1BR in-place $1,695 exceeds median; use in-place floor.</td></tr>
+              <tr><td>1341 Stanley Ave</td><td>2BR</td><td class="num">$2,005</td><td class="num">$2,185</td><td class="num">$1,631</td><td class="num">$2,380</td><td class="num">$900</td><td class="num">$2,775</td><td class="num">22</td><td>0.75 mi</td><td><a href="https://www.rentometer.com/analysis/2-bed/1341-stanley-ave-long-beach-ca-90804/RiWZjM0oqgo/quickview">Open</a></td><td>OM $2,300 is near p75, defensible but upper-band.</td></tr>
+              <tr><td>1033 Stanley Ave</td><td>1BR</td><td class="num">$1,582</td><td class="num">$1,725</td><td class="num">$1,271</td><td class="num">$1,893</td><td class="num">$500</td><td class="num">$2,375</td><td class="num">34</td><td>0.75 mi</td><td><a href="https://www.rentometer.com/analysis/1-bed/1033-stanley-ave-long-beach-ca-90804/DBNfEKKjkGs/quickview">Open</a></td><td>Used in assumed PF only; unit mix unverified.</td></tr>
+              <tr><td>1033 Stanley Ave</td><td>2BR</td><td class="num">$2,267</td><td class="num">$2,250</td><td class="num">$1,977</td><td class="num">$2,557</td><td class="num">$1,090</td><td class="num">$3,000</td><td class="num">34</td><td>0.75 mi</td><td><a href="https://www.rentometer.com/analysis/2-bed/1033-stanley-ave-long-beach-ca-90804/vuYTtDDHaNw/quickview">Open</a></td><td>Used in assumed PF only; unit mix unverified.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callouts">
+          <div class="callout"><b>Saved evidence limitation</b>Rentometer summary pulls do not preserve each underlying rental address, property year built, amenity set, or exact distance.</div>
+          <div class="callout"><b>What is still needed</b>Pull MLS leased comps or a Rentometer detailed export if the final BPO will make a client-facing market-rent claim.</div>
+          <div class="callout"><b>Current safe use</b>Use Rentometer as a PF floor check and upside range, not as a fully audited rent comp table.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="maps">
+      <div class="section-head">
+        <div>
+          <h2>Map Views</h2>
+          <p>Subject corridor, sale comp locations, and saved Rentometer search radii. Coordinates for sale comps are geocoded for review only.</p>
+        </div>
+        <div class="section-action">Maps require internet access for tiles.</div>
+      </div>
+      <div class="body">
+        <div class="map-grid">
+          <div class="map-panel">
+            <div class="map-title">Sale Comp Map - Subject + 8 Closed Comps</div>
+            <div id="saleMap" class="map" role="img" aria-label="Map of subject properties and sale comps"></div>
+            <div class="map-foot">Blue markers = subject properties. Gold markers = sale comps. Marker coordinates are for visual review, not legal verification.</div>
+          </div>
+          <div class="map-panel">
+            <div class="map-title">Rent Comp Map - Rentometer 0.75-Mile Search Radii</div>
+            <div id="rentMap" class="map" role="img" aria-label="Map of Rentometer search radii"></div>
+            <div class="map-foot">Circles show the saved 0.75-mile Rentometer search radius around each subject. Individual rent-comp addresses are not in the saved API evidence.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="notes">
+      <div class="section-head">
+        <div>
+          <h2>Property, Comp, and Market Notes</h2>
+          <p>Plain-English notes that should be approved, changed, or kept internal before client-facing use.</p>
+        </div>
+        <div class="section-action">Use these to catch narrative mistakes.</div>
+      </div>
+      <div class="body">
+        <div class="grid-2">
+          <div class="note-box">
+            <h3>Property Notes</h3>
+            <ul>
+              <li>Two fourplexes three blocks apart with same ownership and similar income profiles.</li>
+              <li>1341 rent roll is verified from OM page 8; 1033 unit-level rent roll is missing.</li>
+              <li>Both T12s omit property tax; underwriting uses reassessed taxes at list price.</li>
+              <li>Trash is $0 baseline because no trash line appears in either T12. Add $1,400/property only if owner-paid trash is confirmed.</li>
+              <li>Soft-story/SWOF status is unverified for both APNs.</li>
+              <li>R&M and contract-services normalization should stay internal until seller CapEx/site condition is better understood.</li>
+            </ul>
+          </div>
+          <div class="note-box">
+            <h3>Comp Notes</h3>
+            <ul>
+              <li>Sale comp price/unit and GRM support the $1.05M per-property recommendation better than cap rate.</li>
+              <li>Seven of eight sale comps have financial reliability flags; raw cap rates should not be treated as clean buyer-normalized caps.</li>
+              <li>1033 Gladys is the GRM outlier at 16.81 and is excluded from the trimmed GRM median.</li>
+              <li>Rentometer evidence is summary-level only. It is acceptable as a floor check, but not a complete rent-comp exhibit.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="note-box" style="margin-top:16px;">
+          <h3>Market Notes</h3>
+          <ul>
+            <li>Long Beach 90804 fourplex sales in this set cluster around $300K-$362K per unit, with the subject recommendation at $262.5K/unit.</li>
+            <li>Current pricing leans on GRM and rent-upside support while acknowledging tighter in-place cap rates.</li>
+            <li>AB 1482 and Long Beach JCO apply, but Costa-Hawkins vacancy decontrol remains available on turnover.</li>
+            <li>Client-facing PF language should wait for 1033 rent roll and MLS leased-rent comp cross-check.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="gates">
+      <div class="section-head">
+        <div>
+          <h2>Approval Gates</h2>
+          <p>What must be fixed before client-facing use versus what can stay internal.</p>
+        </div>
+        <div class="section-action">Same gating logic as workbook tab 07.</div>
+      </div>
+      <div class="body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Gate</th><th>Item</th><th>Why It Matters</th><th>Required Before</th><th>Current Treatment</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="pill red">Red</span></td><td>1033 rent roll / unit mix</td><td>Cannot perform unit-level PF floor check.</td><td>Client draft</td><td>Aggregate-only assumption, clearly labelled unverified.</td></tr>
+              <tr><td><span class="pill red">Red</span></td><td>Soft-story / SWOF status</td><td>Potential material retrofit cost.</td><td>Owner conversation</td><td>Underwritten as not affected, flagged for public-record check.</td></tr>
+              <tr><td><span class="pill yellow">Yellow</span></td><td>Deferred maintenance / CapEx history</td><td>Could affect R&M and reserves.</td><td>Client draft</td><td>R&M normalized, gross T12 spikes flagged internally.</td></tr>
+              <tr><td><span class="pill yellow">Yellow</span></td><td>MLS leased rent comps</td><td>Tightens market rent support.</td><td>Client draft if PF shown</td><td>Rentometer used as floor check only.</td></tr>
+              <tr><td><span class="pill yellow">Yellow</span></td><td>Normalized comp cap-rate model</td><td>Current cap adjustment is analyst judgment.</td><td>Client draft if cap analysis shown</td><td>Keep internal unless normalized comp model is built.</td></tr>
+              <tr><td><span class="pill green">Green</span></td><td>Metering</td><td>Gas/electric individually metered.</td><td>Done</td><td>Underwritten at $0 owner-paid in-unit utility cost.</td></tr>
+              <tr><td><span class="pill green">Green</span></td><td>Rent control posture</td><td>AB 1482 + Long Beach JCO.</td><td>Done</td><td>Documented and approved subject to final wording.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      LAAA Team - Marcus & Millichap - Internal review dashboard. Workbook remains the approval source.
+    </footer>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const subjects = [
+    { name: "1341 Stanley", address: "1341 Stanley Ave", lat: 33.7833584, lon: -118.1623283, year: 1959 },
+    { name: "1033 Stanley", address: "1033 Stanley Ave", lat: 33.7796061, lon: -118.1623227, year: 1923 }
+  ];
+
+  const saleComps = [
+    { name: "1009 Coronado Ave #4", lat: 33.7889653, lon: -118.1535018, price: "$920K", metric: "$230K/unit", year: 1928 },
+    { name: "1056 Junipero Ave", lat: 33.7801323, lon: -118.1632044, price: "$1.05M", metric: "$262.5K/unit", year: 1924 },
+    { name: "3915 E 11th St", lat: 33.7808590, lon: -118.1466789, price: "$1.235M", metric: "$308.8K/unit", year: 1949 },
+    { name: "3320 E 8th St", lat: 33.7770648, lon: -118.1531864, price: "$1.20M", metric: "$300K/unit", year: 1930 },
+    { name: "1200 Temple Ave", lat: 33.7816989, lon: -118.1588269, price: "$1.30M", metric: "$325K/unit", year: 1913 },
+    { name: "932 Coronado Ave", lat: 33.7783177, lon: -118.1533960, price: "$1.30M", metric: "$325K/unit", year: 1909 },
+    { name: "2015 E 7th St", lat: 33.7754247, lon: -118.1672185, price: "$1.425M", metric: "$356.3K/unit", year: 1919 },
+    { name: "1033 Gladys Ave", lat: 33.7795970, lon: -118.1579340, price: "$1.449M", metric: "$362.3K/unit", year: 1923 }
+  ];
+
+  function makeMap(id, center, zoom) {
+    const map = L.map(id, { scrollWheelZoom: false }).setView(center, zoom);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+    return map;
+  }
+
+  function addCircleMarker(map, item, color, radius, popupHtml) {
+    L.circleMarker([item.lat, item.lon], {
+      radius,
+      color,
+      weight: 2,
+      fillColor: color,
+      fillOpacity: 0.78
+    }).addTo(map).bindPopup(popupHtml);
+  }
+
+  window.addEventListener("load", function () {
+    if (!window.L) return;
+
+    const saleMap = makeMap("saleMap", [33.7817, -118.1589], 14);
+    subjects.forEach((s) => {
+      addCircleMarker(saleMap, s, "#173f66", 8, `<b>${s.name}</b><br>${s.address}<br>Year built: ${s.year}`);
+    });
+    saleComps.forEach((c) => {
+      addCircleMarker(saleMap, c, "#b58a2b", 7, `<b>${c.name}</b><br>${c.price}<br>${c.metric}<br>Year built: ${c.year}`);
+    });
+    const allSalePoints = subjects.concat(saleComps).map((p) => [p.lat, p.lon]);
+    saleMap.fitBounds(allSalePoints, { padding: [20, 20] });
+
+    const rentMap = makeMap("rentMap", [33.7815, -118.16235], 14);
+    subjects.forEach((s) => {
+      addCircleMarker(rentMap, s, "#173f66", 8, `<b>${s.name}</b><br>Rentometer search center<br>0.75-mile radius`);
+      L.circle([s.lat, s.lon], {
+        radius: 1207,
+        color: "#b58a2b",
+        weight: 2,
+        fillColor: "#d5ba73",
+        fillOpacity: 0.12
+      }).addTo(rentMap);
+    });
+    rentMap.fitBounds(subjects.map((p) => [p.lat, p.lon]), { padding: [60, 60] });
+  });
+</script>
+</body>
+</html>
